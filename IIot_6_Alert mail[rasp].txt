@@ -1,0 +1,399 @@
+import RPi.GPIO as GPIO
+import time
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+SMTP_USERNAME = 'kksupekar371121@kkwagh.edu.in'  
+SMTP_PASSWORD = 'Ksupekar@2003'  
+EMAIL_FROM = 'kksupekar371121@kkwagh.edu.in'  
+EMAIL_TO = 'darshankedare1815@gmail.com'  
+EMAIL_SUBJECT = 'Object Detected!'
+
+
+IR_SENSOR_PIN = 7
+LED_PIN = 11
+
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(IR_SENSOR_PIN, GPIO.IN)
+GPIO.setup(LED_PIN, GPIO.OUT)
+
+def send_email():
+    try:
+        # Create a secure SSL context
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+
+        # Email content
+        message = MIMEMultipart()
+        message['From'] = EMAIL_FROM
+        message['To'] = EMAIL_TO
+        message['Subject'] = EMAIL_SUBJECT
+        body = "An object has been detected by the IR sensor."
+        message.attach(MIMEText(body, 'plain'))
+
+        # Send email
+        server.sendmail(EMAIL_FROM, EMAIL_TO, message.as_string())
+
+        # Clean up
+        server.quit()
+        print("Email sent successfully!")
+
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+try:
+    while True:
+        if GPIO.input(IR_SENSOR_PIN) == GPIO.LOW:
+            print("Object detected!")
+            GPIO.output(LED_PIN, GPIO.HIGH)  # Turn on LED
+            send_email()  # Send email notification
+            time.sleep(1)  # Delay to avoid multiple emails in quick succession
+        else:
+            print("No object detected.")
+            GPIO.output(LED_PIN, GPIO.LOW)  # Turn off LED
+       
+        time.sleep(0.5)
+
+except KeyboardInterrupt:
+    print("\nExiting program.")
+finally:
+    GPIO.cleanup()
+
+
+
+
+
+
+
+theory:
+
+
+
+Sure! Let's go over the code and explain each part in detail:
+
+### 1. **Imports**:
+
+```python
+import RPi.GPIO as GPIO
+import time
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+```
+
+- **RPi.GPIO**: This is a Python library used to interact with the General Purpose Input/Output (GPIO) pins on a Raspberry Pi. GPIO pins can be used to read inputs (like from sensors) or send outputs (like to LEDs or motors).
+- **time**: This is a built-in Python module that provides various time-related functions. In this case, it's used to create delays (`time.sleep()`).
+- **smtplib**: This module is used for sending email messages using the Simple Mail Transfer Protocol (SMTP).
+- **email.mime.multipart** and **email.mime.text**: These modules help create the structure of the email. Specifically:
+  - **MIMEMultipart** allows you to send an email with different parts (e.g., text, attachments).
+  - **MIMEText** allows you to format the email body as plain text.
+
+### 2. **SMTP and Email Configuration**:
+
+```python
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+SMTP_USERNAME = 'kksupekar371121@kkwagh.edu.in'  
+SMTP_PASSWORD = 'Ksupekar@2003'  
+EMAIL_FROM = 'kksupekar371121@kkwagh.edu.in'  
+EMAIL_TO = 'darshankedare1815@gmail.com'  
+EMAIL_SUBJECT = 'Object Detected!'
+```
+
+These variables store the details required for sending an email:
+- `SMTP_SERVER`: The server that handles email delivery (in this case, Gmail's SMTP server).
+- `SMTP_PORT`: The port used for the connection (587 is typically used for sending email securely).
+- `SMTP_USERNAME` and `SMTP_PASSWORD`: Your Gmail account's login credentials for authentication.
+- `EMAIL_FROM`: The email address sending the message.
+- `EMAIL_TO`: The recipient's email address.
+- `EMAIL_SUBJECT`: The subject line of the email.
+
+### 3. **GPIO Pin Setup**:
+
+```python
+IR_SENSOR_PIN = 7
+LED_PIN = 11
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(IR_SENSOR_PIN, GPIO.IN)
+GPIO.setup(LED_PIN, GPIO.OUT)
+```
+
+- **IR_SENSOR_PIN = 7**: This is the pin number connected to the infrared (IR) sensor. This sensor detects the presence of an object.
+- **LED_PIN = 11**: This is the pin connected to an LED. The LED will light up when an object is detected by the IR sensor.
+  
+- `GPIO.setmode(GPIO.BOARD)`: This sets the pin numbering system to the physical board layout. This is one of two numbering systems (the other being `GPIO.BCM`).
+  
+- `GPIO.setup()`: This function configures the specified GPIO pin:
+  - `GPIO.IN` sets the pin as an input (for reading the state of the IR sensor).
+  - `GPIO.OUT` sets the pin as an output (for controlling the LED).
+
+### 4. **Email Sending Function**:
+
+```python
+def send_email():
+    try:
+        # Create a secure SSL context
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+
+        # Email content
+        message = MIMEMultipart()
+        message['From'] = EMAIL_FROM
+        message['To'] = EMAIL_TO
+        message['Subject'] = EMAIL_SUBJECT
+        body = "An object has been detected by the IR sensor."
+        message.attach(MIMEText(body, 'plain'))
+
+        # Send email
+        server.sendmail(EMAIL_FROM, EMAIL_TO, message.as_string())
+
+        # Clean up
+        server.quit()
+        print("Email sent successfully!")
+
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+```
+
+This function is responsible for sending an email when an object is detected:
+- `smtplib.SMTP()`: Establishes a connection to the SMTP server.
+- `server.starttls()`: Starts a secure connection.
+- `server.login()`: Logs into the Gmail account using the provided username and password.
+  
+**Message Creation**:
+- `MIMEMultipart()` creates the structure for the email (from, to, subject, body).
+- `message.attach(MIMEText(body, 'plain'))` attaches the text body to the email.
+
+The email is sent using `server.sendmail()`.
+
+Finally, the server connection is closed using `server.quit()`.
+
+### 5. **Main Program Loop**:
+
+```python
+try:
+    while True:
+        if GPIO.input(IR_SENSOR_PIN) == GPIO.LOW:
+            print("Object detected!")
+            GPIO.output(LED_PIN, GPIO.HIGH)  # Turn on LED
+            send_email()  # Send email notification
+            time.sleep(1)  # Delay to avoid multiple emails in quick succession
+        else:
+            print("No object detected.")
+            GPIO.output(LED_PIN, GPIO.LOW)  # Turn off LED
+       
+        time.sleep(0.5)
+```
+
+- This is the main loop that continuously checks for object detection by the IR sensor.
+- `GPIO.input(IR_SENSOR_PIN)` reads the state of the IR sensor:
+  - If the sensor detects an object, it will output `GPIO.LOW` (indicating the object is near the sensor).
+  - If no object is detected, it will output `GPIO.HIGH` (indicating no object).
+  
+- When an object is detected:
+  - **LED Pin** is turned **ON** (`GPIO.HIGH`), lighting up the LED.
+  - The `send_email()` function is called to notify the user.
+  - `time.sleep(1)` introduces a delay to prevent multiple emails from being sent in quick succession.
+
+- If no object is detected, the LED is turned **OFF** (`GPIO.LOW`).
+
+- `time.sleep(0.5)` ensures that the program checks the sensor every 0.5 seconds.
+
+### 6. **Graceful Exit on Keyboard Interrupt**:
+
+```python
+except KeyboardInterrupt:
+    print("\nExiting program.")
+finally:
+    GPIO.cleanup()
+```
+
+- `except KeyboardInterrupt`: This ensures that if the program is manually stopped (e.g., using Ctrl+C), the program will exit gracefully.
+- `GPIO.cleanup()`: This function ensures that all the GPIO pins are cleaned up (reset to their default state), which is a good practice to avoid any interference or conflicts with other programs that might use the GPIO pins later.
+
+### Summary of the Program's Workflow:
+
+1. **Initialize GPIO**: Set up the IR sensor and LED pins.
+2. **Main Loop**:
+   - Continuously check if the IR sensor detects an object.
+   - If an object is detected, turn on the LED and send an email notification.
+   - If no object is detected, turn off the LED.
+3. **Send Email**: The email is sent using Gmail's SMTP server whenever an object is detected.
+4. **Graceful Exit**: If the program is interrupted, clean up the GPIO setup.
+
+This program uses hardware (the IR sensor and LED) and software (email notifications) to create a simple object detection system that can alert you via email.
+
+
+
+
+
+
+
+
+### **Explanation of the Code and Its Functionality**
+
+This program is designed to **send alert messages via email** when an object is detected using an IR sensor connected to a Raspberry Pi. It also uses an LED as a visual indicator.
+
+---
+
+### **Code Breakdown**
+
+#### **1. Importing Required Libraries**
+```python
+import RPi.GPIO as GPIO
+import time
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+```
+
+- **`RPi.GPIO`**: A library to interact with the Raspberry Pi GPIO pins for controlling hardware components.
+- **`time`**: For adding delays to avoid multiple alerts in a short time.
+- **`smtplib`, `MIMEMultipart`, `MIMEText`**: For sending emails using Python's Simple Mail Transfer Protocol (SMTP).
+
+---
+
+#### **2. Email Configuration**
+```python
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+SMTP_USERNAME = 'kksupekar371121@kkwagh.edu.in'  
+SMTP_PASSWORD = 'Ksupekar@2003'  
+EMAIL_FROM = 'kksupekar371121@kkwagh.edu.in'  
+EMAIL_TO = 'darshankedare1815@gmail.com'  
+EMAIL_SUBJECT = 'Object Detected!'
+```
+
+- **SMTP Configuration**: Sets up the email server (`smtp.gmail.com`) to send emails through Gmail.
+- **Credentials**: `SMTP_USERNAME` and `SMTP_PASSWORD` are the sender's email credentials. Replace these with your own for security purposes.
+- **Email Details**: Specifies the sender (`EMAIL_FROM`), recipient (`EMAIL_TO`), and subject (`EMAIL_SUBJECT`).
+
+---
+
+#### **3. GPIO Setup**
+```python
+IR_SENSOR_PIN = 7
+LED_PIN = 11
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(IR_SENSOR_PIN, GPIO.IN)
+GPIO.setup(LED_PIN, GPIO.OUT)
+```
+
+- **IR Sensor Pin**: Connected to **pin 7** (detects objects).
+- **LED Pin**: Connected to **pin 11** (visual alert).
+- **`GPIO.setmode(GPIO.BOARD)`**: Sets the GPIO pin numbering mode to match the physical layout of the Raspberry Pi.
+
+---
+
+#### **4. Sending Email**
+```python
+def send_email():
+    try:
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()  # Start secure TLS connection
+        server.login(SMTP_USERNAME, SMTP_PASSWORD)
+
+        message = MIMEMultipart()
+        message['From'] = EMAIL_FROM
+        message['To'] = EMAIL_TO
+        message['Subject'] = EMAIL_SUBJECT
+        body = "An object has been detected by the IR sensor."
+        message.attach(MIMEText(body, 'plain'))
+
+        server.sendmail(EMAIL_FROM, EMAIL_TO, message.as_string())
+        server.quit()
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+```
+
+- **Purpose**: Sends an email alert with the subject "Object Detected!" whenever the IR sensor detects an object.
+- **Error Handling**: If email sending fails, the exception (`e`) is printed.
+
+---
+
+#### **5. Monitoring and Alerts**
+```python
+try:
+    while True:
+        if GPIO.input(IR_SENSOR_PIN) == GPIO.LOW:
+            print("Object detected!")
+            GPIO.output(LED_PIN, GPIO.HIGH)  # Turn on LED
+            send_email()  # Send email notification
+            time.sleep(1)  # Avoid multiple alerts in a short span
+        else:
+            print("No object detected.")
+            GPIO.output(LED_PIN, GPIO.LOW)  # Turn off LED
+        time.sleep(0.5)
+
+except KeyboardInterrupt:
+    print("\nExiting program.")
+finally:
+    GPIO.cleanup()
+```
+
+- **Continuous Monitoring**:
+  - If the IR sensor detects an object (`GPIO.LOW`), the LED lights up, and an email is sent.
+  - If no object is detected, the LED turns off.
+- **Delay**: `time.sleep(1)` ensures that multiple emails aren’t sent rapidly.
+- **KeyboardInterrupt**: Allows the program to exit gracefully when interrupted.
+- **`GPIO.cleanup()`**: Ensures all GPIO pins are reset to avoid resource issues.
+
+---
+
+### **Output**
+
+1. **Console Output**:
+   - When an object is detected:
+     ```
+     Object detected!
+     Email sent successfully!
+     ```
+   - When no object is detected:
+     ```
+     No object detected.
+     ```
+
+2. **Email Alert**:
+   - **Subject**: *Object Detected!*
+   - **Body**: *An object has been detected by the IR sensor.*
+
+---
+
+### **Key Concepts**
+
+#### **1. GPIO Interaction**
+- **IR Sensor**: Detects objects by identifying changes in infrared radiation.
+- **LED**: Provides visual feedback for detection.
+
+#### **2. SMTP for Email Alerts**
+- **SMTP**: Protocol used to send emails.
+- **TLS**: Ensures secure email transmission.
+
+#### **3. Real-Time Interaction**
+- Continuous monitoring ensures immediate alerts upon detection.
+
+---
+
+### **Possible Examiner Questions**
+
+1. **Why use `starttls()` in the SMTP setup?**
+   - It establishes a secure encrypted connection for sending emails.
+
+2. **What happens if `GPIO.cleanup()` is not called?**
+   - The GPIO pins may remain in an undefined state, leading to resource conflicts.
+
+3. **What does the IR sensor do?**
+   - It detects objects by sensing infrared radiation variations.
+
+4. **Why add a delay (`time.sleep(1)`)?**
+   - To prevent multiple email alerts from being sent in a short span of time.
